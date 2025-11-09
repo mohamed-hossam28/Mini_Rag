@@ -12,7 +12,7 @@ Python 3.8 or later
 2. Create a new environment using the following command:
 
 ```bash
-$ conda create -n mini-rag python=3.8
+$ conda create -n mini-rag python=3.10
 ```
 
 3. activate enviroment
