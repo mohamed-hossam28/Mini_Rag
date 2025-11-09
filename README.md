@@ -36,3 +36,9 @@ $cp .env.example .env
 ```
 
 set your own env variables
+
+## To Run App
+
+```bash
+$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+```
