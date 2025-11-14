@@ -4,3 +4,6 @@ python-multipart== 0.0.20 #load file uploads
 pydantic-settings== 2.12.0 #settings management
 python-dotenv== 1.2.1 #environment variable management
 aiofiles == 25.1.0 #asynchronous file operations
+langchain==1.0.7
+langchain-community== 0.4.1
+PyMuPDF==1.26.6
