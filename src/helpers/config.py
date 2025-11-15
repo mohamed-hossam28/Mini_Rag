@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     
     FILE_DEFAULT_CHUNK_SIZE: int  # kb to load chunk from memory to directory in bytes
 
+    MONGODB_URL: str
+    MONGODB_DATABASE: str
+
     @field_validator('FILE_ALLOWED_TYPES', mode='before')
     @classmethod
     def _split_allowed_types(cls, v):
