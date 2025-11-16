@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, validator
 from typing import Optional
 from bson.objectid import ObjectId # For MongoDB ObjectId type
 
-class project(BaseModel):
+class Project(BaseModel):
     id: Optional[ObjectId]=Field(default=None, alias="_id") # MongoDB uses _id as the primary key
     project_id:str=Field(...,min_length=1)
 

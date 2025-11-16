@@ -1,10 +1,11 @@
-from fastapi import APIRouter,Depends,UploadFile,status
+from fastapi import APIRouter,Depends,UploadFile,status,Request
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
 from controllers import DataController,ProjectsController,ProcessController
 import aiofiles
-from models import ResponseSignals
+from models import ResponseSignals, ProjectModel, ChunkModel
+from models.DBSchemas import Project, DataChunk
 import logging
 from .schemas import ProcessRequest
 
@@ -17,7 +18,8 @@ data_router=APIRouter(
 
 #validate file propirties
 @data_router.post("/upload/{project_id}") #project_id is dynamic to identify different projects
-async def upload_data(project_id: str, file: UploadFile , app_settings : Settings =Depends(get_settings)):
+async def upload_data(request:Request,project_id: str, file: UploadFile , app_settings : Settings =Depends(get_settings)):
+    #Request is needed to access the request object(app variables) if needed
     
     data_controller=DataController()
 
@@ -31,6 +33,11 @@ async def upload_data(project_id: str, file: UploadFile , app_settings : Setting
             }
         )
     
+    #create project in DB if not exists
+    project_model=ProjectModel(request.app.db_client)
+    project=await project_model.get_project_or_create_one(project_id=project_id)
+    
+    #craete project directory if not exists
     project_dir_path=ProjectsController().get_project_path(project_id)
 
     file_path, file_id=data_controller.generate_unique_filepath(
@@ -59,13 +66,18 @@ async def upload_data(project_id: str, file: UploadFile , app_settings : Setting
 
     
 @data_router.post("/process/{project_id}") #project_id is dynamic to identify different projects
-async def process_endpoint(project_id:str ,process_reqquest:ProcessRequest) :
+async def process_endpoint(request:Request, project_id:str ,process_reqquest:ProcessRequest) :
+    #get processing parameters
     file_id=process_reqquest.file_id
     chunk_size=process_reqquest.chunk_size
     overlap_size=process_reqquest.overlap_size
+    do_reset=process_reqquest.do_reset
 
+    #process the file
     process_controller=ProcessController(project_id=project_id)
+
     file_content=process_controller.get_file_content(file_id=file_id)
+
     chunks=process_controller.process_file_content(
         file_content=file_content,
         chunk_size=chunk_size,
@@ -80,17 +92,34 @@ async def process_endpoint(project_id:str ,process_reqquest:ProcessRequest) :
             }
         )
     
-    serialized_chunks = [
-    {
-        "content": chunk.page_content,
-        "metadata": chunk.metadata
-    }
-    for chunk in chunks
-]
+    #store chunks in DB
+        #get project
+    project_model=ProjectModel(request.app.db_client)
+    project=await project_model.get_project_or_create_one(project_id=project_id)
+
+        #add chunk
+    chunk_model=ChunkModel(request.app.db_client)
+    file_chunks_records=[
+        DataChunk(
+            chunk_text=chunck.page_content,
+            chunk_metadata=chunck.metadata,
+            chunk_order=i+1,
+            project_id=project.id
+        )
+        for i ,chunck in enumerate(chunks)
+    ]
+     #check do reset to remove previous chunks or not
+    if do_reset == 1:
+        _=await chunk_model.delete_chunk_by_project_id(project_id=project.id)
+
+    no_records=await chunk_model.insert_many_chunks(
+        chunks=file_chunks_records
+    ) 
+
 
     return JSONResponse(
         content={
             "signal": ResponseSignals.FILE_PROCESSING_SUCCESS.value,
-            "chunks": serialized_chunks
+            "inserted_chunks": no_records
         }
     )
