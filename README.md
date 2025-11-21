@@ -38,10 +38,24 @@ $ pip install requirements.txt
 ### set up enviroment variables
 
 ```bash
-$cp .env.example .env
+$ cp .env.example .env
 ```
 
 set your own env variables
+
+## Run Docker Compose Service
+
+```bash
+$ cd docker
+$ cp .env.example .env
+```
+
+### update .env with your credentials
+
+```bash
+$ cd docker
+$ sudo docker compose up-d
+```
 
 ## To Run App
 

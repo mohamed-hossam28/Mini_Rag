@@ -7,8 +7,13 @@ services:
     ports:
       - "27007:27017"
     
+    #store mongo data in a volume to persist data across container restarts and not inside my derictory for security reasons 
     volumes:
-      - ./mongodb:/data/db
+      - mongodata:/data/db
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     
     networks:
       - backend
@@ -17,3 +22,7 @@ services:
 
 networks:
   backend:
+
+#volumes section for mongodb data persistence to ensure data is not lost on container restart
+volumes:
+  mongodata:   

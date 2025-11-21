@@ -1,0 +1,11 @@
+to stop docker containers running on Windows command line
+    for /f %i in ('docker ps -aq') do docker stop %i 
+
+to remove docker containers running on Windows command line
+    for /f %i in ('docker ps -aq') do docker rm %i
+
+to remove docker images running on Windows command line
+    for /f %i in ('docker images -q') do docker rmi -f %i
+
+to remove docker volumes running on Windows command line
+    for /f %i in ('docker volume ls -q') do docker volume rm %i
