@@ -148,6 +148,10 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
     for asset_id,file_id in project_file_ids.items():
         file_content=process_controller.get_file_content(file_id=file_id)
 
+        if file_content is None:
+            logger.error(f"Error while processing file: {file_id}")
+            continue
+
         chunks=process_controller.process_file_content(
             file_content=file_content,
             chunk_size=chunk_size,

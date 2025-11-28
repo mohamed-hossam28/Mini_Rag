@@ -22,6 +22,8 @@ class ProcessController(BaseController):
             self.project_path,
             file_id
         )
+        if not os.path.exists(file_path):
+            return None
         
         if file_extension == ProcessEnums.TXT.value:
             return TextLoader(file_path=file_path,encoding='utf8') #encoding for text files not to crash on special characters or other languages
@@ -31,6 +33,8 @@ class ProcessController(BaseController):
         
     def get_file_content(self,file_id:str):
         loader=self.get_file_loader(file_id)
+        if loader is None:
+            return None
         return loader.load()
     
 
