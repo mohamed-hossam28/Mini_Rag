@@ -34,7 +34,7 @@ async def upload_data(request:Request,project_id: str, file: UploadFile , app_se
         )
     
     #create project in DB if not exists
-    project_model=ProjectModel(request.app.db_client)
+    project_model=await ProjectModel.create_instance(request.app.db_client)
     project=await project_model.get_project_or_create_one(project_id=project_id)
     
     #craete project directory if not exists
@@ -94,17 +94,17 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
     
     #store chunks in DB
         #get project
-    project_model=ProjectModel(request.app.db_client)
+    project_model=await ProjectModel.create_instance(request.app.db_client)
     project=await project_model.get_project_or_create_one(project_id=project_id)
 
         #add chunk
-    chunk_model=ChunkModel(request.app.db_client)
+    chunk_model=await ChunkModel.create_instance(request.app.db_client)
     file_chunks_records=[
         DataChunk(
             chunk_text=chunck.page_content,
             chunk_metadata=chunck.metadata,
             chunk_order=i+1,
-            project_id=project.id
+            chunk_project_id=project.id
         )
         for i ,chunck in enumerate(chunks)
     ]
