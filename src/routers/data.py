@@ -4,10 +4,11 @@ import os
 from helpers.config import get_settings, Settings
 from controllers import DataController,ProjectsController,ProcessController
 import aiofiles
-from models import ResponseSignals, ProjectModel, ChunkModel
-from models.DBSchemas import Project, DataChunk
+from models import ResponseSignals, ProjectModel, ChunkModel,AssetModel,AssetTypeEnum
+from models.DBSchemas import Project, DataChunk,Asset
 import logging
 from .schemas import ProcessRequest
+from bson.objectid import ObjectId
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -57,10 +58,30 @@ async def upload_data(request:Request,project_id: str, file: UploadFile , app_se
                 'Signal':ResponseSignals.FILE_UPLOAD_FAILED.value
             }
         )
+
+    asset_model=await AssetModel.create_instance(request.app.db_client)
+
+    asset_recource=Asset(
+        asset_project_id=ObjectId(project.id),
+        asset_name=file_id,
+        asset_type=AssetTypeEnum.FILE.value,
+        asset_size=os.path.getsize(file_path)
+    )
+
+    asset_record=await asset_model.create_asset(asset_recource)
+
+    if asset_record is None:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                'Signal':ResponseSignals.FILE_UPLOAD_FAILED.value
+            }
+        )
+
     return JSONResponse(
             content={
                 "signal": ResponseSignals.FILE_UPLOAD_SUCCESS.value,
-                "file_id": file_id
+                "file_id": str(asset_record.id)
             }
         )
 
