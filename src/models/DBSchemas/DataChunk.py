@@ -8,7 +8,7 @@ class DataChunk(BaseModel):
     chunk_metadata:dict
     chunk_order:int=Field(...,gt=0) #order of the chunk in the original document, must be positive integer
     chunk_project_id: ObjectId # Reference to the project this chunk belongs to
-
+    chunk_asset_id: ObjectId
 
     @classmethod  #static method to create inedxes for the collection
     def get_indexes(cls): # Return a list of indexes definations for the collection
