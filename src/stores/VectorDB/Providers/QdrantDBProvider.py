@@ -1,21 +1,26 @@
-from sqlalchemy.sql._elements_constructors import true
-from numba.core.types import none
 from ..VectorDBInterface import VectorDBInterface
 from ..VectorDBEnums import DistanceMethodEnums
 import logging
 from qdrant_client import QdrantClient,models
+from typing import List
 
 class QdrantDBProvider(VectorDBInterface):
     def __init__(self,dp_path:str,distance_method:str):
         self.client=None
         self.dp_path=dp_path
-        
-        if distance_method==DistanceMethodEnums.COSINE.value:
-            self.distance_method=DistanceMethodEnums.COSINE.value
-        elif distance_method==DistanceMethodEnums.DOT.value:
-            self.distance_method=DistanceMethodEnums.DOT.value
+        self.distance_method=None
 
         self.logger=logging.getLogger(__name__)
+        if distance_method==DistanceMethodEnums.COSINE.value:
+            self.distance_method=models.Distance.COSINE
+        elif distance_method==DistanceMethodEnums.DOT.value:
+            self.distance_method=models.Distance.DOT
+        else:
+            self.logger.error(
+                f"Unsupported distance method '{distance_method}' provided. Defaulting to COSINE."
+            )
+            self.distance_method = models.Distance.COSINE
+
 
     def connect(self):
         self.client=QdrantClient(path=self.dp_path)
@@ -70,6 +75,7 @@ class QdrantDBProvider(VectorDBInterface):
                 collection_name=collection_name,
                 records=[
                     models.Record(
+                        id=record_id,
                         vector=vector,
                         payload={
                             "text":text,
@@ -85,7 +91,7 @@ class QdrantDBProvider(VectorDBInterface):
             return False
 
 
-    def insert_many(self,collection_name:str,text:list,vector:list,
+    def insert_many(self,collection_name:str,texts:list,vectors:list,
                     metadata:list=None,record_ids:list=None,batch_size:int=50):
 
         if not self.is_collection_existed(collection_name):
@@ -94,20 +100,22 @@ class QdrantDBProvider(VectorDBInterface):
 
         #if metadata is none then make it a list of none to iterate over it
         if metadata is None:
-            metadata=[None]*len(text)
+            metadata=[None]*len(texts)
         
         if record_ids is None:
-            record_ids=[None]*len(text) 
+            record_ids=[None]*len(texts) 
 
-        for i in range(0,len(text),batch_size):
+        for i in range(0,len(texts),batch_size):
             batch_end=i+batch_size
 
-            batch_text=text[i:batch_end]
-            batch_vector=vector[i:batch_end]
+            batch_text=texts[i:batch_end]
+            batch_vector=vectors[i:batch_end]
             batch_metadata=metadata[i:batch_end]
+            batch_record_ids=record_ids[i:batch_end]
 
             batch_record=[
                 models.Record(
+                    id=batch_record_ids[x],
                     vector=batch_vector[x],
                     payload={
                         "text":batch_text[x],
@@ -118,15 +126,15 @@ class QdrantDBProvider(VectorDBInterface):
             ]
             
             try:
-            _=self.client.upload_records(
-                collection_name=collection_name,
-                records=batch_record
+                _=self.client.upload_records(
+                    collection_name=collection_name,
+                    records=batch_record
                 )
-            return True
+                return True
 
-        except Exception as e:
-            self.logger.error(f"Error while inserting batch: {e}")
-            return False
+            except Exception as e:
+                self.logger.error(f"Error while inserting batch: {e}")
+                return False
 
     def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
         return self.client.search(

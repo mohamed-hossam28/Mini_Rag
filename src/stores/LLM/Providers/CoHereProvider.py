@@ -18,7 +18,7 @@ class CoHereProvider(LLMInterface):
         self.embedding_model_id = None
         self.embedding_size = None
 
-        self.client=cohere.client(
+        self.client=cohere.Client(
             api_key=api_key,
         )
 
@@ -60,7 +60,7 @@ class CoHereProvider(LLMInterface):
         response=self.client.chat(
             model=self.generation_model_id,
             chat_history=chat_history,
-            message=process_text(prompt),
+            message=self.process_text(prompt),
             max_tokens=max_output_tokens,
             temperature=temperature
         )
@@ -72,13 +72,13 @@ class CoHereProvider(LLMInterface):
         return response.text
 
     
-     def embed_text(self,text:str,document_type:str):
+    def embed_text(self,text:str,document_type:str):
         if not self.client:
-            self.logger.error("OpenAI client was not set")
+            self.logger.error("CoHere client was not set")
             return None
 
         if not self.embedding_model_id :
-            self.logger.error("OpenAI embedding model was not set")
+            self.logger.error("CoHere embedding model was not set")
             return None
 
         input_type=CoHereEnums.DOCUMENT.value
@@ -87,8 +87,8 @@ class CoHereProvider(LLMInterface):
 
         response=self.client.embed(
             model=self.embedding_model_id,
-            texts=[process_text(text)],
-            input_type=input_type
+            texts=[self.process_text(text)],
+            input_type=input_type,
             embedding_types=['float']
         )
 

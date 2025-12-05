@@ -81,7 +81,8 @@ async def upload_data(request:Request,project_id: str, file: UploadFile , app_se
     return JSONResponse(
             content={
                 "signal": ResponseSignals.FILE_UPLOAD_SUCCESS.value,
-                "file_id": str(asset_record.id)
+                "file_id": str(asset_record.id),
+                "file_name":str(asset_record.asset_name)
             }
         )
 
@@ -129,13 +130,14 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
             record.id:record.asset_name
             for record in project_file
         }
-        if len(project_file_ids) == 0:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    'Signal':ResponseSignals.NO_FILES_ERROR.value
-                }
-            )
+        
+    if len(project_file_ids) == 0:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                'Signal':ResponseSignals.NO_FILES_ERROR.value
+            }
+        )
         
     #process files
     #check do reset to remove previous chunks or not
@@ -186,7 +188,7 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
 
     return JSONResponse(
         content={
-            "signal": ResponseSignals.FILE_PROCESSING_SUCCESS.value,
+            "signal": ResponseSignals.PROCESSING_SUCCESS.value,
             "inserted_chunks": no_records,
             "processed_files": no_files
         }
