@@ -2,6 +2,7 @@ from .BaseController import BaseController
 from models.DBSchemas.Project import Project
 from models.DBSchemas.DataChunk import DataChunk
 from stores.LLM import DocumentTypeEnum
+import json
 
 class NLPController(BaseController):
     def __init__(self,vectordb_client,embedding_client,generation_client):
@@ -20,6 +21,12 @@ class NLPController(BaseController):
     def get_vector_db_collection_info(self,project:Project):
         collection_name=self.create_collection_name(project_id=project.project_id)
         collection_info=self.vectordb_client.get_collection_info(collection_name=collection_name)
+        #collection info is not serializable so we need to convert it to json
+        collection_info=json.loads( 
+            #dumps convert to string to be converted to json
+            #default=lambda x:x.__dict__ is used to convert the object to dictionary if its not serializable and supported by x library
+            json.dumps(collection_info,default=lambda x:x.__dict__)  
+        )
         return collection_info
 
     def index_into_vector_db(self,project:Project,chunks:list[DataChunk],
@@ -52,4 +59,25 @@ class NLPController(BaseController):
         )
         return True
         
-    
+    def search_vector_db_collection(self,project: Project, text: str, limit: int = 5):
+
+        #collection name
+        collection_name=self.create_collection_name(project_id=project.project_id)
+        #embed vector
+        vector=self.embedding_client.embed_text(
+            text=text,
+            document_type=DocumentTypeEnum.QUERY.value
+        )
+        if not vector:
+            return False
+        #semantic search
+        results=self.vectordb_client.search_by_vector(
+            collection_name=collection_name,
+            vector=vector,
+            limit=limit
+        )
+
+        if not results:
+            return False
+        
+        return results
