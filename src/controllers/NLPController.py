@@ -3,13 +3,15 @@ from models.DBSchemas.Project import Project
 from models.DBSchemas.DataChunk import DataChunk
 from stores.LLM import DocumentTypeEnum
 import json
+from stores.LLM.templates import template_parser
 
 class NLPController(BaseController):
-    def __init__(self,vectordb_client,embedding_client,generation_client):
+    def __init__(self,vectordb_client,embedding_client,generation_client,template_parser:template_parser):
         super().__init__()
         self.vectordb_client=vectordb_client
         self.embedding_client=embedding_client
         self.generation_client=generation_client
+        self.template_parser=template_parser
 
     def create_collection_name(self,project_id:str):
         return f"collection_{project_id}".strip()
@@ -81,3 +83,53 @@ class NLPController(BaseController):
             return False
         
         return results
+
+    
+    def answer_rag_questions(self,project:Project,query:str,limit:int=5):
+        answer,prompt,chat_history=None,None,None
+
+        #step 1 retrive documents
+        retrieved_documents =self.search_vector_db_collection(
+            project=project,
+            text=query,
+            limit=limit
+        )
+        if not retrieved_documents:
+            return answer,prompt,chat_history
+
+        # step2: Construct LLM prompt
+        system_prompt = self.template_parser.get(
+            group="rag",
+            key="system_prompt"
+        )
+
+        documents_prompts = "\n".join([
+            self.template_parser.get("rag", "document_prompt", {
+                    "doc_num": idx + 1,
+                    "chunk_text": doc.text,
+            })
+            for idx, doc in enumerate(retrieved_documents)
+        ])
+
+        footer_prompt =self.template_parser.get(
+            group="rag",
+            key="footer_prompt"
+        )
+
+         # step3: Construct Generation Client Prompts
+        chat_history=[
+            self.generation_client.construct_prompt(
+                role=self.generation_client.enums.SYSTEM.value,
+                prompt=system_prompt
+            )]
+
+        full_prompt = "\n\n".join([ documents_prompts,  footer_prompt])
+
+        # step4: Retrieve the Answer
+        answer = self.generation_client.generate_text(
+            prompt=full_prompt,
+            chat_history=chat_history
+        )
+
+        return answer, full_prompt, chat_history
+        

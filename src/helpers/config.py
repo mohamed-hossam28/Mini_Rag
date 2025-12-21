@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     VECTOR_DB_PATH: str
     VECTOR_DB_DISTANCE_METHOD: str
 
+    PRIMARY_LANG: str
+    DEFAULT_LANG: str
+
     @field_validator('FILE_ALLOWED_TYPES', mode='before')
     @classmethod
     def _split_allowed_types(cls, v):

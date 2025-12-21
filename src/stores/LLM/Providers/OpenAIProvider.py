@@ -18,6 +18,7 @@ class OpenAIProvider(LLMInterface):
 
         self.embedding_model_id = None
         self.embedding_size = None
+        self.enums = OpenAIEnums
 
         self.client=OpenAI(
             api_key=api_key,
@@ -64,18 +65,38 @@ class OpenAIProvider(LLMInterface):
             self.construct_prompt(prompt,OpenAIEnums.USER.value)
         )
 
-        response=self.client.chat.completions.create(
-            model=self.generation_model_id,
-            messages=chat_history,
-            max_tokens=max_output_tokens,
-            temperature=temperature
-        )
-
-        if not response or not response.choices or len(response.choices)==0 or not response.choices[0].message or not response.choices[0].message.content:
-            self.logger.error("Error while generating text with OpenAI")
+        try:
+            response=self.client.chat.completions.create(
+                model=self.generation_model_id,
+                messages=chat_history,
+                max_tokens=max_output_tokens,
+                temperature=temperature
+            )
+        except Exception as e:
+            self.logger.error(f"Exception while generating text with OpenAI: {e}")
             return None
 
-        return response.choices[0].message.content
+        if not response or not response.choices or len(response.choices)==0 or not response.choices[0].message:
+            self.logger.error("Error while generating text with OpenAI: Invalid response structure")
+            return None
+
+        choice = response.choices[0]
+        if choice.finish_reason == "length":
+            self.logger.warning("OpenAI generation truncated due to max_token limit. Consider increasing GENERATION_DAFAULT_MAX_TOKENS.")
+        
+        content = choice.message.content
+        
+        if not content:
+            # Check if there is reasoning content (for reasoning models)
+            if hasattr(choice.message, 'reasoning') and choice.message.reasoning:
+                self.logger.warning("OpenAI returned reasoning but no content. The model likely ran out of tokens while reasoning.")
+                return None # Or return choice.message.reasoning if appropriate, but usually we want the final answer.
+            
+            self.logger.error("Error while generating text with OpenAI: Empty content in response")
+            self.logger.error(f"Full Response: {response}")
+            return None
+
+        return content
 
 
     def embed_text(self,text:str,document_type:str):
