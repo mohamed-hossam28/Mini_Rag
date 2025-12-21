@@ -25,3 +25,11 @@ class DataChunk(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True# Allow ObjectId type because its not a standard type to pydantic
+
+
+
+class RetrievedDocument(BaseModel):
+    text:str
+    score:float
+
+    
