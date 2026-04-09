@@ -77,7 +77,7 @@ async def index_project(request:Request,project_id:str,puch_request:PushRequest)
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
-                    "signal": ResponseSignal.INSERT_INTO_VECTORDB_ERROR.value
+                    "signal": ResponseSignals.INSERT_INTO_VECTORDB_ERROR.value
                 }
             )
         
