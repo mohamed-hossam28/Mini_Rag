@@ -14,7 +14,7 @@ class Project(SQLAlchemyBase):
     project_uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
 
     created_at = Column(DateTime(timezone=True), nullable=False,server_default='now()')
-    updated_at = Column(DateTime(timezone=True), nullable=False,onupdate='now()')
+    updated_at = Column(DateTime(timezone=True), onupdate='now()')
 
 
     #######Relationships########

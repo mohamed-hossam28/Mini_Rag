@@ -1,6 +1,6 @@
 from .BaseController import BaseController
-from models.DBSchemas.Project import Project
-from models.DBSchemas.DataChunk import DataChunk
+from models.DBSchemas import Project
+from models.DBSchemas import DataChunk
 from stores.LLM import DocumentTypeEnum
 import json
 from stores.LLM.templates import template_parser

@@ -19,7 +19,7 @@ class Asset(SQLAlchemyBase):
     asset_config=Column(JSONB, nullable=True)    #jsonb to store in binary so that the reading is faster and also allows for indexing
     
     asset_created_at=Column(DateTime(timezone=True), server_default='now()',nullable=False)
-    asset_updated_at=Column(DateTime(timezone=True), onupdate='now()',nullable=False)
+    asset_updated_at=Column(DateTime(timezone=True), onupdate='now()')
 
     asset_project_id=Column(Integer,ForeignKey("projects.project_id"),nullable=False,)
 

@@ -62,7 +62,7 @@ async def upload_data(request:Request,project_id: str, file: UploadFile , app_se
     asset_model=await AssetModel.create_instance(request.app.db_client)
 
     asset_recource=Asset(
-        asset_project_id=ObjectId(project.id),
+        asset_project_id=project.project_id,
         asset_name=file_id,
         asset_type=AssetTypeEnum.FILE.value,
         asset_size=os.path.getsize(file_path)
@@ -81,7 +81,7 @@ async def upload_data(request:Request,project_id: str, file: UploadFile , app_se
     return JSONResponse(
             content={
                 "signal": ResponseSignals.FILE_UPLOAD_SUCCESS.value,
-                "file_id": str(asset_record.id),
+                "file_id": str(asset_record.asset_id),
                 "file_name":str(asset_record.asset_name)
             }
         )
@@ -107,7 +107,7 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
     project_file_ids={}
     if process_reqquest.file_id :
         asset_record=await asset_model.get_asset_record(
-            asset_project_id=ObjectId(project.id),
+            asset_project_id=ObjectId(project.project_id),
             asset_name=process_reqquest.file_id
         )
         if asset_record is None:
@@ -119,15 +119,15 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
             )
 
         project_file_ids={
-            asset_record.id:asset_record.asset_name
+            asset_record.asset_id:asset_record.asset_name
         }
     else:
         project_file=await asset_model.get_all_project_asset(
-            asset_project_id=ObjectId(project.id),
+            asset_project_id=project.project_id,
             asset_type=AssetTypeEnum.FILE.value
         )
         project_file_ids={
-            record.id:record.asset_name
+            record.asset_id:record.asset_name
             for record in project_file
         }
         
@@ -142,7 +142,7 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
     #process files
     #check do reset to remove previous chunks or not
     if do_reset == 1:
-        _=await chunk_model.delete_chunk_by_project_id(project_id=project.id)
+        _=await chunk_model.delete_chunk_by_project_id(project_id=project.project_id)
 
     no_records=0
     no_files=0
@@ -174,7 +174,7 @@ async def process_endpoint(request:Request, project_id:str ,process_reqquest:Pro
                 chunk_text=chunck.page_content,
                 chunk_metadata=chunck.metadata,
                 chunk_order=i+1,
-                chunk_project_id=project.id,
+                chunk_project_id=project.project_id,
                 chunk_asset_id=asset_id
             )
             for i ,chunck in enumerate(chunks)

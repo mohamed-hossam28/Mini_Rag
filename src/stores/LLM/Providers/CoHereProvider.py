@@ -43,7 +43,7 @@ class CoHereProvider(LLMInterface):
     def construct_prompt(self,prompt:str,role:str):
         return {
             "role":role,
-            "text":self.process_text(prompt)
+            "text":prompt
         }
 
     def generate_text(self,prompt:str,chat_history=[],max_output_tokens:int=None,temperature:float=None):
@@ -61,7 +61,7 @@ class CoHereProvider(LLMInterface):
         response=self.client.chat(
             model=self.generation_model_id,
             chat_history=chat_history,
-            message=self.process_text(prompt),
+            message=prompt,
             max_tokens=max_output_tokens,
             temperature=temperature
         )

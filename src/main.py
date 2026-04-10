@@ -40,7 +40,7 @@ async def startup_span():
     )
 
 async def shutdown_span():
-    app.db_client.dispose() #to close all connections in the connection pool and release resources used by the engine.
+    await app.db_engine.dispose() #to close all connections in the connection pool and release resources used by the engine.
     app.vectordb_client.disconnect()
 
 #creating lifespan
